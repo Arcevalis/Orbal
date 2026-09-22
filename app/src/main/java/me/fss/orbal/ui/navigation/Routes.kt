@@ -1,0 +1,10 @@
+package me.fss.orbal.ui.navigation
+
+sealed class Routes(val route: String) {
+    data object Onboarding : Routes("onboarding")
+    data object Chat : Routes("chat")
+    data object Settings : Routes("settings")
+    data object About : Routes("about")
+    data object Help : Routes("help")
+    data object KnowledgeBase : Routes("knowledgeBase")
+}

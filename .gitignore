@@ -1,0 +1,33 @@
+*.iml
+.home
+.gradle
+.gradle_home
+.idea
+.kotlin
+# Not anchored: Android Studio also writes app/local.properties, which carries
+# an absolute SDK path and must not be committed.
+local.properties
+/build
+/app/build
+/smollm/build
+/smollm/.cxx
+.DS_Store
+*.apk
+*.aab
+*.jks
+*.keystore
+app/src/main/assets/model/*.gguf
+.externalNativeBuild
+.cxx
+captures
+app/release/
+
+# Khronos header checkouts the Vulkan backend builds against (~56 MB of upstream
+# headers, plus SPIRV-Headers' local `cmake --install` tree). Kept in the project
+# root so the build finds them without a sibling directory, but not committed.
+# See the Build from Source section of the README for the two clone commands.
+# Delete these two lines if you would rather vendor them into the repo.
+/Vulkan-Headers/
+/SPIRV-Headers/
+
+.android/

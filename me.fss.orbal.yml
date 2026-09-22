@@ -1,0 +1,42 @@
+Categories:
+  - Science & Education
+License: Apache-2.0
+AuthorName: Arcevalis
+SourceCode: https://github.com/Arcevalis/Orbal
+IssueTracker: https://github.com/Arcevalis/Orbal/issues
+Changelog: https://github.com/Arcevalis/Orbal/releases
+
+AutoName: Orbal
+Description: |-
+    Private AI for Android — on-device or your own server.
+
+    Run any GGUF locally via llama.cpp with no cloud, no account — or
+    flip Remote Model and point Orbal at your own LM Studio / Ollama /
+    vLLM server (OpenAI-compatible) on your local network.
+
+    Features: Vulkan GPU + CPU dispatch, streaming chat, vision (camera +
+    gallery, 4×1024 JPEG), tools (clock, calculator, web search, URL
+    read, knowledge-base RAG), auto-compaction with server context
+    awareness, queued follow-ups, Material 3 theming, 13 fonts,
+    biometric lock.
+
+RepoType: git
+Repo: https://github.com/Arcevalis/Orbal.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: v1.0.0
+    subdir: app
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake
+    gradle:
+      - yes
+    ndk: r27c
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Camera captures: cache root + images subdirs; compressed vision images in filesDir/images -->
+    <cache-path name="cache" path="." />
+    <cache-path name="cache_images" path="images/" />
+    <external-cache-path name="external_cache" path="." />
+    <files-path name="files" path="." />
+    <files-path name="images" path="images/" />
+    <external-files-path name="external_files" path="." />
+    <external-files-path name="external_images" path="images/" />
+</paths>
