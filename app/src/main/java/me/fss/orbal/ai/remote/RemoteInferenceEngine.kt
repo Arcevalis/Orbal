@@ -16,14 +16,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.concurrent.withLock
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.time.measureTime
-
-@Singleton
-class RemoteInferenceEngine @Inject constructor(
+class RemoteInferenceEngine(
     private val lmStudioClient: LmStudioClient,
     private val settingsRepository: SettingsRepository,
     private val toolExecutor: me.fss.orbal.ai.tools.ToolExecutor,

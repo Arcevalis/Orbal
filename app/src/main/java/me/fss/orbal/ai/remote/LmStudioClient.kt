@@ -24,12 +24,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.coroutines.coroutineContext
-
-@Singleton
-class LmStudioClient @Inject constructor() {
+class LmStudioClient() {
 
     private val json = Json {
         ignoreUnknownKeys = true

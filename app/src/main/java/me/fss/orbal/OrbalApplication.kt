@@ -1,7 +1,14 @@
 package me.fss.orbal
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import me.fss.orbal.di.AppContainer
 
-@HiltAndroidApp
-class OrbalApplication : Application()
+class OrbalApplication : Application() {
+    lateinit var appContainer: AppContainer
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+        appContainer = AppContainer(this)
+    }
+}

@@ -1,5 +1,9 @@
 package me.fss.orbal.ui.screens
 
+import android.app.Application
+import me.fss.orbal.di.LocalAppContainer
+import me.fss.orbal.di.AppContainer
+import androidx.lifecycle.viewmodel.compose.viewModel
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -91,7 +95,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import me.fss.orbal.ai.ModelManager
@@ -113,7 +116,7 @@ private var SemanticsPropertyReceiver.sensitiveData by SensitiveDataKey
 @Composable
 fun ChatScreen(
     onNavigateToSettings: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel(),
+    viewModel: ChatViewModel = viewModel(factory = AppContainer.Factory(LocalAppContainer.current, LocalContext.current.applicationContext as Application)),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -628,7 +631,6 @@ fun ChatScreen(
                             }
                         }
                     }
-
 
                     }
                     // Scroll-to-bottom FAB — shows whenever we're not at the true bottom

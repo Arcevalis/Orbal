@@ -9,23 +9,18 @@ import me.fss.orbal.data.local.entities.KnowledgeChunk
 import me.fss.orbal.data.local.entities.KnowledgeDocument
 import me.fss.orbal.data.rag.RetrievalService
 import me.fss.orbal.data.rag.chunkDocument
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 
 sealed class IndexProgress {
     data class Stage(val name: String, val message: String) : IndexProgress()
     data object Done : IndexProgress()
 }
-
-@Singleton
-class KnowledgeRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+class KnowledgeRepository(
+    private val context: Context,
     private val documentDao: KnowledgeDocumentDao,
     private val chunkDao: KnowledgeChunkDao,
     private val retrievalService: RetrievalService,

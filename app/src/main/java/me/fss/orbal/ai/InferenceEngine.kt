@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.time.measureTime
 
-class InferenceEngine @javax.inject.Inject constructor(
+class InferenceEngine constructor(
     private val settingsRepository: me.fss.orbal.data.repository.SettingsRepository? = null
 ) {
 

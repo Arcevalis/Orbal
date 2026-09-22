@@ -3,8 +3,6 @@ package me.fss.orbal.data.rag
 import me.fss.orbal.data.local.dao.KnowledgeChunkDao
 import me.fss.orbal.data.local.dao.KnowledgeDocumentDao
 import me.fss.orbal.data.local.entities.KnowledgeChunk
-import javax.inject.Inject
-import javax.inject.Singleton
 
 data class RagSearchResult(
     val docId: Long,
@@ -13,9 +11,7 @@ data class RagSearchResult(
     val position: Int,
     val score: Float = 0f, // for future embedding scores
 )
-
-@Singleton
-class RetrievalService @Inject constructor(
+class RetrievalService(
     private val documentDao: KnowledgeDocumentDao,
     private val chunkDao: KnowledgeChunkDao,
 ) {

@@ -1,5 +1,10 @@
 package me.fss.orbal.ui.screens
 
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import me.fss.orbal.di.LocalAppContainer
+import me.fss.orbal.di.AppContainer
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +50,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.fss.orbal.utils.FileUtils
 
@@ -53,7 +57,7 @@ import me.fss.orbal.utils.FileUtils
 @Composable
 fun KnowledgeBaseScreen(
     onNavigateBack: () -> Unit,
-    viewModel: KnowledgeBaseViewModel = hiltViewModel(),
+    viewModel: KnowledgeBaseViewModel = viewModel(factory = AppContainer.Factory(LocalAppContainer.current, LocalContext.current.applicationContext as Application)),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showPasteSheet by remember { mutableStateOf(false) }

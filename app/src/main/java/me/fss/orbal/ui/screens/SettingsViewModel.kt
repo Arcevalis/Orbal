@@ -15,14 +15,12 @@ import me.fss.orbal.data.repository.ExportedMessage
 import me.fss.orbal.data.repository.SettingsRepository
 import me.fss.orbal.ui.theme.ThemeMode
 import me.fss.orbal.utils.FileUtils
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
 
 data class SettingsUiState(
     val models: List<ModelInfo> = emptyList(),
@@ -83,9 +81,7 @@ data class SettingsUiState(
     val serverCtx: Int = 0,
     val effectiveCtx: Int = 4096,
 )
-
-@HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel(
     private val application: Application,
     private val settingsRepository: SettingsRepository,
     private val chatRepository: ChatRepository,

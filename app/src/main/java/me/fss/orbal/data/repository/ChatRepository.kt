@@ -15,8 +15,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Serializable
 data class ExportedChat(
@@ -45,9 +43,7 @@ data class MessageWithAttachments(
     val message: Message,
     val attachments: List<MessageAttachment> = emptyList()
 )
-
-@Singleton
-class ChatRepository @Inject constructor(
+class ChatRepository(
     private val conversationDao: ConversationDao,
     private val messageDao: MessageDao,
     private val messageAttachmentDao: MessageAttachmentDao,

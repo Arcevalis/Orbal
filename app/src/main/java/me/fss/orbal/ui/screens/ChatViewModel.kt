@@ -25,7 +25,6 @@ import me.fss.orbal.utils.SecurityUtils
 import me.fss.orbal.ai.compaction.CompactionManager
 import me.fss.orbal.ai.compaction.TokenEstimator
 import me.fss.orbal.ai.remote.LmStudioClient
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -37,7 +36,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -68,9 +66,7 @@ data class ChatUiState(
     val serverCtx: Int = 0,
     val queuedMessageCount: Int = 0,
 )
-
-@HiltViewModel
-class ChatViewModel @Inject constructor(
+class ChatViewModel(
     private val application: Application,
     private val chatRepository: ChatRepository,
     private val settingsRepository: SettingsRepository,
@@ -1073,8 +1069,6 @@ class ChatViewModel @Inject constructor(
         ttsHelper.stop()
         _uiState.update { it.copy(speakingMessageId = null) }
     }
-
-
 
     override fun onCleared() {
         super.onCleared()

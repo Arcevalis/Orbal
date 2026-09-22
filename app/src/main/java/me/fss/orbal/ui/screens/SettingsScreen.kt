@@ -1,5 +1,9 @@
 package me.fss.orbal.ui.screens
 
+import android.app.Application
+import me.fss.orbal.di.LocalAppContainer
+import me.fss.orbal.di.AppContainer
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -68,7 +72,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.fss.orbal.ai.SystemPrompts
 import me.fss.orbal.ui.theme.AppFont
@@ -90,7 +93,7 @@ fun SettingsScreen(
     onNavigateToAbout: () -> Unit = {},
     onNavigateToHelp: () -> Unit = {},
     onNavigateToKnowledgeBase: () -> Unit = {},
-    viewModel: SettingsViewModel = hiltViewModel(),
+    viewModel: SettingsViewModel = viewModel(factory = AppContainer.Factory(LocalAppContainer.current, LocalContext.current.applicationContext as Application)),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

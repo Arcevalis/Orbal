@@ -8,12 +8,10 @@ import androidx.lifecycle.viewModelScope
 import me.fss.orbal.data.local.entities.KnowledgeDocument
 import me.fss.orbal.data.rag.RagSearchResult
 import me.fss.orbal.data.repository.KnowledgeRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class KnowledgeUiState(
     val documents: List<KnowledgeDocument> = emptyList(),
@@ -23,9 +21,7 @@ data class KnowledgeUiState(
     val searchResults: List<RagSearchResult> = emptyList(),
     val isSearching: Boolean = false,
 )
-
-@HiltViewModel
-class KnowledgeBaseViewModel @Inject constructor(
+class KnowledgeBaseViewModel(
     private val app: Application,
     private val repo: KnowledgeRepository,
 ) : AndroidViewModel(app) {

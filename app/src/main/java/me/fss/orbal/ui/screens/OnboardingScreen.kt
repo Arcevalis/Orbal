@@ -1,5 +1,10 @@
 package me.fss.orbal.ui.screens
 
+import android.app.Application
+import androidx.compose.ui.platform.LocalContext
+import me.fss.orbal.di.LocalAppContainer
+import me.fss.orbal.di.AppContainer
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,13 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun OnboardingScreen(
     onComplete: () -> Unit,
-    viewModel: OnboardingViewModel = hiltViewModel(),
+    viewModel: OnboardingViewModel = viewModel(factory = AppContainer.Factory(LocalAppContainer.current, LocalContext.current.applicationContext as Application)),
 ) {
     val copyProgress by viewModel.copyProgress.collectAsStateWithLifecycle()
     val copyDone by viewModel.copyDone.collectAsStateWithLifecycle()

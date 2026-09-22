@@ -6,22 +6,17 @@ import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import android.app.ActivityManager
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import android.util.Log
-
-@Singleton
-class ToolExecutor @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+class ToolExecutor(
+    private val context: Context,
     private val retrievalService: me.fss.orbal.data.rag.RetrievalService,
     private val settingsRepository: me.fss.orbal.data.repository.SettingsRepository,
 ) {

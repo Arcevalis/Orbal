@@ -5,13 +5,8 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class SettingsRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context
+class SettingsRepository(
+    private val context: Context
 ) {
     // Prefer a StrongBox-backed master key when available. Fall back gracefully when not.
     private val masterKeyAndBackend: Pair<MasterKey, String> by lazy { createMasterKeyAndBackend() }

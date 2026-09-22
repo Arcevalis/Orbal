@@ -9,8 +9,6 @@ import me.fss.orbal.data.repository.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -19,9 +17,7 @@ data class CompactResult(
     val summarizedCount: Int,
     val upToMessageId: String?
 )
-
-@Singleton
-class CompactionManager @Inject constructor(
+class CompactionManager(
     private val settingsRepository: SettingsRepository,
     private val lmStudioClient: LmStudioClient,
     private val inferenceEngine: InferenceEngine
