@@ -159,7 +159,6 @@ class InferenceEngine constructor(
                     val thinkParser = ThinkTagParser()
                     val stripThinking = settingsRepository?.disableThinking ?: true
                     var stopRequested = false
-                    var tokensSinceLastEmit = 0
 
                     val duration = measureTime {
                         instance.getResponseAsFlow(query).collect { piece ->
@@ -182,17 +181,12 @@ class InferenceEngine constructor(
                                 }
                             )
 
-                            tokensSinceLastEmit++
-                            if (tokensSinceLastEmit >= 3) {
-                                tokensSinceLastEmit = 0
-                                val displayAnswer = ThinkingParser.stripControlTokens(answerDisplay.toString())
-                                if (displayAnswer.isNotBlank() || rawContent.isEmpty()) {
-                                    withContext(Dispatchers.Main) {
-                                        onToken(displayAnswer)
-                                        if (!stripThinking && reasoningDisplay.isNotEmpty()) {
-                                            onReasoning(reasoningDisplay.toString())
-                                        }
-                                    }
+                            // Immediate emission so thinking stream is live
+                            val displayAnswer = ThinkingParser.stripControlTokens(answerDisplay.toString())
+                            withContext(Dispatchers.Main) {
+                                onToken(displayAnswer)
+                                if (!stripThinking && reasoningDisplay.isNotEmpty()) {
+                                    onReasoning(reasoningDisplay.toString())
                                 }
                             }
                         }

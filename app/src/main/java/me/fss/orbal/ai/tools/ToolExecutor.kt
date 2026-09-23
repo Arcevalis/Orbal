@@ -116,7 +116,7 @@ class ToolExecutor(
         return "$expression = $display"
     }
 
-    /** Recursive descent — mirrors OGAM evaluateExpression */
+    /** Recursive descent — evaluate expression */
     private fun evaluateExpression(expr: String): Double {
         val str = expr.replace("\\s".toRegex(), "")
         val parser = ExprParser(str)

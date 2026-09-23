@@ -6,7 +6,7 @@ data class RagChunk(
 )
 
 /**
- * Simple sliding window chunker — mirrors OGAM chunkText but Kotlin-native.
+ * Simple sliding window chunker — Kotlin-native.
  * No external deps, ~800 chars with 100 overlap, respects paragraph boundaries when possible.
  */
 fun chunkDocument(text: String, chunkSize: Int = 800, overlap: Int = 100): List<RagChunk> {

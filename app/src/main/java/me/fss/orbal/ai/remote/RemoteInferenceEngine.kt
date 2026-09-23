@@ -145,7 +145,6 @@ class RemoteInferenceEngine(
                         val reasoningDisplay = StringBuilder()
                         val thinkParser = ThinkTagParser()
                         var stopSeqHit = false
-                        var tokensSinceEmit = 0
                         val duration = measureTime {
                             lmStudioClient.streamChatCompletionWithTools(
                                 baseUrl = baseUrl,
@@ -181,17 +180,12 @@ class RemoteInferenceEngine(
                                                 }
                                             }
                                         )
-                                        // Structured reasoning already handled via separate event
-                                        tokensSinceEmit++
-                                        if (tokensSinceEmit >= 3) {
-                                            tokensSinceEmit = 0
-                                            // Clean display for streaming (control tokens only, thinking already split)
-                                            val display = ThinkingParser.stripControlTokens(answerDisplay.toString())
-                                            withContext(Dispatchers.Main) {
-                                                onToken(display)
-                                                if (!stripThinking && reasoningDisplay.isNotEmpty()) {
-                                                    onReasoning(reasoningDisplay.toString())
-                                                }
+                                        // Emit immediately per delta so thinking stream is live, not batched
+                                        val display = ThinkingParser.stripControlTokens(answerDisplay.toString())
+                                        withContext(Dispatchers.Main) {
+                                            onToken(display)
+                                            if (!stripThinking && reasoningDisplay.isNotEmpty()) {
+                                                onReasoning(reasoningDisplay.toString())
                                             }
                                         }
                                     }
@@ -199,8 +193,12 @@ class RemoteInferenceEngine(
                                         structuredReasoning.append(event.text)
                                         if (!stripThinking) {
                                             reasoningDisplay.append(event.text)
-                                            // Emit reasoning live as well (throttled via token batch above, but also emit here)
-                                            // We batch reasoning emissions with token emissions to avoid spam
+                                            withContext(Dispatchers.Main) {
+                                                onReasoning(reasoningDisplay.toString())
+                                                // Also keep answer display fresh
+                                                val display = ThinkingParser.stripControlTokens(answerDisplay.toString())
+                                                if (display.isNotEmpty()) onToken(display)
+                                            }
                                         }
                                     }
                                     is LmStudioClient.StreamEvent.ToolCalls -> { /* no tools in this path */ }
@@ -249,7 +247,6 @@ class RemoteInferenceEngine(
                             var collectedToolCalls: List<ToolCall> = emptyList()
                             var stepFinish: String? = null
                             var stopSeqHit = false
-                            var tokensSinceEmit = 0
 
                             lmStudioClient.streamChatCompletionWithTools(
                                 baseUrl = baseUrl,
@@ -281,19 +278,22 @@ class RemoteInferenceEngine(
                                         )
                                         val tail = if (stepAnswerDisplay.length > 200) stepAnswerDisplay.substring(stepAnswerDisplay.length - 200) else stepAnswerDisplay.toString()
                                         if (containsStopSequence(tail)) { stopSeqHit = true; return@collect }
-                                        tokensSinceEmit++
-                                        if (tokensSinceEmit >= 3) {
-                                            tokensSinceEmit = 0
-                                            val display = ThinkingParser.stripControlTokens(stepAnswerDisplay.toString())
-                                            withContext(Dispatchers.Main) {
-                                                onToken(display)
-                                                if (!stripThinking && stepReasoningDisplay.isNotEmpty()) onReasoning(stepReasoningDisplay.toString())
-                                            }
+                                        val display = ThinkingParser.stripControlTokens(stepAnswerDisplay.toString())
+                                        withContext(Dispatchers.Main) {
+                                            onToken(display)
+                                            if (!stripThinking && stepReasoningDisplay.isNotEmpty()) onReasoning(stepReasoningDisplay.toString())
                                         }
                                     }
                                     is LmStudioClient.StreamEvent.Reasoning -> {
                                         stepStructured.append(event.text)
-                                        if (!stripThinking) stepReasoningDisplay.append(event.text)
+                                        if (!stripThinking) {
+                                            stepReasoningDisplay.append(event.text)
+                                            withContext(Dispatchers.Main) {
+                                                onReasoning(stepReasoningDisplay.toString())
+                                                val display = ThinkingParser.stripControlTokens(stepAnswerDisplay.toString())
+                                                if (display.isNotEmpty()) onToken(display)
+                                            }
+                                        }
                                     }
                                     is LmStudioClient.StreamEvent.ToolCalls -> collectedToolCalls = event.calls
                                     is LmStudioClient.StreamEvent.Finish -> stepFinish = event.reason

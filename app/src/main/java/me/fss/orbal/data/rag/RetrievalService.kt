@@ -17,13 +17,13 @@ class RetrievalService(
 ) {
     /**
      * Keyword search Standard — no embeddings yet. Uses SQLite LIKE fallback via DAO.
-     * Mirrors OGAM search() but without vector cosine; still topK 5 + budget.
+     * Without vector cosine; still topK 5 + budget.
      */
     suspend fun search(projectId: String = "default", query: String, topK: Int = 5): List<RagSearchResult> {
         if (query.isBlank()) return emptyList()
         val chunks = chunkDao.searchChunks(projectId, query, topK)
         if (chunks.isNotEmpty()) return mapWithNames(chunks)
-        // Fallback: first chunks if no keyword hit (like OGAM's no-embedding fallback)
+        // Fallback: first chunks if no keyword hit (like no-embedding fallback)
         val fallback = chunkDao.getChunksForProject(projectId).take(topK)
         return mapWithNames(fallback)
     }
@@ -71,7 +71,7 @@ class RetrievalService(
     }
 
     fun estimateCharBudget(contextLengthTokens: Int): Int {
-        // 25% of window reserved for RAG, ~4 chars per token → budget = contextLength (OGAM formula)
+        // 25% of window reserved for RAG, ~4 chars per token → budget = contextLength (formula)
         return maxOf(0, contextLengthTokens)
     }
 

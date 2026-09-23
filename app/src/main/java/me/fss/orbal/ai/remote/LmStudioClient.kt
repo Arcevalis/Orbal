@@ -294,13 +294,13 @@ class LmStudioClient() {
                         val chunk = json.decodeFromString<ChatCompletionChunk>(data)
                         val delta = chunk.choices.firstOrNull()?.delta
                         val finish = chunk.choices.firstOrNull()?.finishReason
-                        // Content + structured reasoning (OGAM-style: reasoning_content / reasoning / thinking / reasoning_details)
+                        // Content + structured reasoning (reasoning_content / reasoning / thinking / reasoning_details)
                         val content = delta?.content
                         if (!content.isNullOrEmpty()) {
                             emittedAny = true
                             emit(StreamEvent.Content(content))
                         }
-                        // Structured reasoning — always emitted as Reasoning event (not gated; gate applied at display layer like OGAM)
+                        // Structured reasoning — always emitted as Reasoning event (not gated; gate applied at display layer)
                         // Handles LM Studio (reasoning_content), Ollama (reasoning/thinking), and reasoning_details array
                         val structuredReasoning = delta?.reasoningContent
                             ?: delta?.reasoning

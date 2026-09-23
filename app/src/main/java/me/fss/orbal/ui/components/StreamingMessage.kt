@@ -51,7 +51,7 @@ fun StreamingMessage(
                             color = androidx.compose.ui.graphics.Color.White,
                         )
                     } else if (partialReasoning.isBlank()) {
-                        // Neither reasoning nor answer yet — show thinking indicator like OGAM
+                        // Neither reasoning nor answer yet — show thinking indicator
                         Text(
                             text = "Thinking...▍",
                             style = MaterialTheme.typography.bodyLarge,

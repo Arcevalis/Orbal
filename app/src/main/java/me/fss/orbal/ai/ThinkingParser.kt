@@ -2,7 +2,7 @@ package me.fss.orbal.ai
 
 /**
  * Reasoning delimiter grammar — single source for inline thinking extraction.
- * Mirrors OGAM's REASONING_DELIMITERS (shared grammar) so Orbal and OGAM agree:
+ * Shared reasoning delimiter grammar:
  *  - <think>...</think>  DeepSeek / Qwen
  *  - <|channel>thought ... <channel|>  Gemma 4 native
  *  - <|channel|>analysis<|message|> ... <|channel|>final<|message|>  Qwen channel
@@ -68,7 +68,7 @@ object ThinkingParser {
         val close = bestDelimiter.close
         val startThinking = bestIdx + open.length
         var reasoningStart = startThinking
-        // Consume single optional newline after opener (OGAM semantics)
+        // Consume single optional newline after opener (semantics)
         if (reasoningStart < content.length && content[reasoningStart] == '\n') reasoningStart++
         // Also handle \r\n
         if (reasoningStart < content.length && content[reasoningStart - 1] == '\n' && reasoningStart < content.length && content[reasoningStart] == '\r') {
@@ -110,8 +110,7 @@ object ThinkingParser {
 
     /**
      * Unified display parse: combines separate reasoning channel + inline delimiters.
-     * Mirrors OGAM's parseModelOutput(content, reasoningContent) — structured reasoning takes precedence,
-     * inline is stripped from answer in both cases.
+     * Structured reasoning takes precedence, inline is stripped from answer in both cases.
      */
     fun parseModelOutput(content: String, reasoningContent: String?): ParsedModelOutput {
         val inline = parseThinkingContent(content)
@@ -153,7 +152,7 @@ object ThinkingParser {
 
     fun stripControlTokens(content: String): String {
         var cleaned = content
-        // Mirrors OGAM's CONTROL_TOKEN_PATTERNS minus tool blocks (we keep answer clean)
+        // CONTROL_TOKEN_PATTERNS minus tool blocks (we keep answer clean)
         cleaned = cleaned.replace(Regex("<\\|im_start\\|>\\s*(?:system|assistant|user|tool)?\\s*\\n?", RegexOption.IGNORE_CASE), "")
         cleaned = cleaned.replace(Regex("<\\|im_end\\|>\\s*\\n?", RegexOption.IGNORE_CASE), "")
         cleaned = cleaned.replace(Regex("<\\|end\\|>", RegexOption.IGNORE_CASE), "")
@@ -209,7 +208,6 @@ object ThinkingParser {
 
 /**
  * Streaming parser that routes inline thinking delimiters to onReasoning vs onToken.
- * Mirrors OGAM's ThinkTagParser but Kotlin-ized.
  * Buffers partial tags across chunks so "<thi" + "nk>" is still recognized.
  */
 class ThinkTagParser {

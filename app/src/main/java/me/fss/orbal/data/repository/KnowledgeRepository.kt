@@ -41,7 +41,7 @@ class KnowledgeRepository(
 
     /**
      * Index a document from a content Uri (file picker) or pasted text.
-     * Mirrors OGAM indexDocument: extract → chunk → insert doc+chunks.
+     * Extract → chunk → insert doc+chunks.
      */
     suspend fun indexDocumentUri(uri: Uri, projectId: String = "default", onProgress: (IndexProgress) -> Unit = {}): Long = withContext(Dispatchers.IO) {
         onProgress(IndexProgress.Stage("extracting", "Extracting text..."))
@@ -121,7 +121,7 @@ class KnowledgeRepository(
             cr.openInputStream(uri)?.use { input ->
                 val bytes = input.readBytes()
                 if (size == 0L) size = bytes.size.toLong()
-                // Cap 500k chars like OGAM RAG_MAX_CHARS
+                // Cap 500k chars like RAG_MAX_CHARS
                 val raw = bytes.toString(Charsets.UTF_8)
                 // Quick heuristic: if raw contains many nulls, it's binary PDF — try naive PDF text extract
                 if (raw.count { it == '\u0000' } > 10 || name.lowercase().endsWith(".pdf")) {

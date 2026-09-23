@@ -79,6 +79,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -144,9 +145,6 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboard = LocalClipboardManager.current
-    // Throttle timestamp for streaming follow
-    var lastAutoScrollMs by remember { mutableStateOf(0L) }
-
     // Launchers
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(maxItems = 4)) { uris ->
         if (uris.isNotEmpty()) {
@@ -209,109 +207,72 @@ fun ChatScreen(
         viewModel.initialize()
     }
 
-    // --- Scroll: follow only when you're literally at the bottom (true bottom, not just top of last item) ---
-    val isAtBottom by remember {
+    // --- Scroll: per-token instant pin, drag-only userScrolled, manual FAB ---
+    var wasNearBottomBeforeSend by remember { mutableStateOf(true) }
+    var wasNearBottomRef by remember { mutableStateOf(true) }
+    var userScrolledDuringGeneration by remember { mutableStateOf(false) }
+    var isAutoScrolling by remember { mutableStateOf(false) }
+    val isNearBottom by remember {
         derivedStateOf {
             val layout = listState.layoutInfo
             val total = layout.totalItemsCount
-            if (total == 0) true
-            else {
-                val last = layout.visibleItemsInfo.lastOrNull()
-                if (last == null) {
-                    // Layout not yet computed — assume at bottom for initial scroll
-                    true
-                } else {
-                    // Need the *last item* to be fully visible (bottom edge inside viewport)
-                    // Tall streaming message: top visible != bottom visible
-                    val isLastItem = last.index == total - 1 || layout.visibleItemsInfo.any { it.index == total - 1 }
-                    if (!isLastItem) false
-                    else {
-                        val lastItem = layout.visibleItemsInfo.find { it.index == total - 1 } ?: last
-                        // viewportEndOffset is the bottom edge in pixels
-                        val viewportEnd = layout.viewportEndOffset
-                        val itemBottom = lastItem.offset + lastItem.size
-                        // Allow 8px tolerance for rounding/dividers
-                        itemBottom <= viewportEnd + 8
-                    }
-                }
-            }
+            if (total == 0) return@derivedStateOf true
+            if (layout.viewportEndOffset == 0) return@derivedStateOf true
+            if (!listState.canScrollForward) return@derivedStateOf true
+            val lastItem = layout.visibleItemsInfo.find { it.index == total - 1 }
+                ?: return@derivedStateOf wasNearBottomRef
+            val distFromBottom = (lastItem.offset + lastItem.size) - layout.viewportEndOffset
+            distFromBottom < 120
         }
     }
-    // autoScroll follows isAtBottom directly — no separate dragged state to drift
-    val autoScrollEnabled by remember { derivedStateOf { isAtBottom } }
 
-    // Helper: snap to true bottom (instant, for streaming/inserts)
-    suspend fun snapToTrueBottom() {
-        val totalItems = uiState.messages.size + (if (uiState.isGenerating) 1 else 0)
-        if (totalItems <= 0) return
-        try { listState.scrollToItem(totalItems - 1) } catch (_: Exception) { return }
-        // Nudge so bottom of tall last item is visible, not just its top
-        try {
-            // Let layout settle one frame
-            // (no delay needed for instant snap, but check offset)
-            val info = listState.layoutInfo
-            val lastItem = info.visibleItemsInfo.find { it.index == totalItems - 1 }
-            if (lastItem != null) {
-                val viewportEnd = info.viewportEndOffset
-                val itemBottom = lastItem.offset + lastItem.size
-                val overhang = itemBottom - viewportEnd
-                if (overhang > 0) {
-                    listState.scrollToItem(totalItems - 1, scrollOffset = overhang)
-                    // Fallback: if scrollOffset clamped, nudge by scrollBy
-                    val info2 = listState.layoutInfo
-                    val last2 = info2.visibleItemsInfo.find { it.index == totalItems - 1 }
-                    if (last2 != null) {
-                        val overhang2 = (last2.offset + last2.size) - info2.viewportEndOffset
-                        if (overhang2 > 2) {
-                            try { listState.scroll { scrollBy(overhang2.toFloat()) } } catch (_: Exception) {}
-                        }
-                    }
-                }
-            } else {
-                // Last item not laid out yet — large nudge will be clamped to real bottom
-                try { listState.scroll { scrollBy(10000f) } } catch (_: Exception) {}
-            }
-        } catch (_: Exception) {}
-    }
-    // Helper: animate to true bottom (for FAB)
-    suspend fun animateToTrueBottom() {
-        val totalItems = uiState.messages.size + (if (uiState.isGenerating) 1 else 0)
-        if (totalItems <= 0) return
-        try { listState.animateScrollToItem(totalItems - 1) } catch (_: Exception) { return }
-        try {
-            delay(60)
-            val info = listState.layoutInfo
-            val lastItem = info.visibleItemsInfo.find { it.index == totalItems - 1 }
-            if (lastItem != null) {
-                val overhang = (lastItem.offset + lastItem.size) - info.viewportEndOffset
-                if (overhang > 2) {
-                    listState.scroll { scrollBy(overhang.toFloat() + 4f) }
-                }
-            } else {
-                listState.scroll { scrollBy(8000f) }
-            }
-        } catch (_: Exception) {}
-    }
-
-    // New messages (sent/received) — instant snap to true bottom if we were already at bottom
-    LaunchedEffect(uiState.messages.size) {
-        if (autoScrollEnabled) {
-            snapToTrueBottom()
+    suspend fun scrollToBottomSmooth() {
+        val total = listState.layoutInfo.totalItemsCount
+        if (total <= 0) return
+        if (isAutoScrolling) return
+        isAutoScrolling = true
+        try { listState.animateScrollToItem(total - 1) } catch (_: Exception) {}
+        try { listState.scroll { scrollBy(8000f) } } catch (_: Exception) {}
+        isAutoScrolling = false
+        kotlinx.coroutines.delay(40)
+        if (listState.canScrollForward) {
+            isAutoScrolling = true
+            try { listState.scrollToItem(total - 1) } catch (_: Exception) {}
+            try { listState.scroll { scrollBy(12000f) } } catch (_: Exception) {}
+            isAutoScrolling = false
+            kotlinx.coroutines.delay(30)
         }
     }
-    // Streaming tokens — throttled instant follow (50ms) so drag-up never snaps back
-    LaunchedEffect(uiState.partialResponse) {
-        if (!autoScrollEnabled) return@LaunchedEffect
-        if (uiState.partialResponse.isEmpty()) return@LaunchedEffect
-        val now = System.currentTimeMillis()
-        if (now - lastAutoScrollMs < 50) return@LaunchedEffect
-        lastAutoScrollMs = now
-        snapToTrueBottom()
+
+    suspend fun scrollToBottomInstant() {
+        val total = listState.layoutInfo.totalItemsCount
+        if (total <= 0) return
+        if (isAutoScrolling) {
+            kotlinx.coroutines.delay(20)
+            if (isAutoScrolling) return
+        }
+        isAutoScrolling = true
+        try { listState.scrollToItem(total - 1) } catch (_: Exception) {}
+        try { listState.scroll { scrollBy(12000f) } } catch (_: Exception) {}
+        isAutoScrolling = false
+        kotlinx.coroutines.delay(35)
+        if (listState.canScrollForward) {
+            isAutoScrolling = true
+            try { listState.scrollToItem(total - 1) } catch (_: Exception) {}
+            try { listState.scroll { scrollBy(12000f) } } catch (_: Exception) {}
+            isAutoScrolling = false
+            kotlinx.coroutines.delay(20)
+        }
+        kotlinx.coroutines.delay(10)
     }
-    // Also re-pin when generating state flips (e.g. isGenerating true adds streaming item)
-    LaunchedEffect(uiState.isGenerating) {
-        if (autoScrollEnabled && uiState.isGenerating) {
-            snapToTrueBottom()
+
+    suspend fun animateToBottom() {
+        // FAB is an explicit user action — clear drag flag so next token pins immediately.
+        userScrolledDuringGeneration = false
+        if (uiState.isGenerating) {
+            scrollToBottomInstant()
+        } else {
+            scrollToBottomSmooth()
         }
     }
 
@@ -319,6 +280,59 @@ fun ChatScreen(
         uiState.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.dismissError()
+        }
+    }
+
+    // Reset userScrolled at generation start and pin if we were at bottom.
+    LaunchedEffect(uiState.isGenerating) {
+        if (uiState.isGenerating) {
+            userScrolledDuringGeneration = false
+            wasNearBottomRef = wasNearBottomBeforeSend
+            if (wasNearBottomBeforeSend) {
+                kotlinx.coroutines.delay(60)
+                val total = listState.layoutInfo.totalItemsCount
+                if (total > 0) {
+                    try { listState.scrollToItem(total - 1) } catch (_: Exception) {}
+                    try { listState.scroll { scrollBy(12000f) } } catch (_: Exception) {}
+                }
+            }
+        }
+    }
+
+    // Pin on new user messages only (not during streaming — per-token handles that).
+    LaunchedEffect(uiState.messages.size) {
+        if (uiState.isGenerating) return@LaunchedEffect
+        val wasNearBottom = wasNearBottomBeforeSend
+        if (uiState.messages.isNotEmpty() && wasNearBottom) {
+            kotlinx.coroutines.delay(80)
+            val total = listState.layoutInfo.totalItemsCount
+            if (total > 0) {
+                try { listState.scrollToItem(total - 1) } catch (_: Exception) {}
+                try { listState.scroll { scrollBy(12000f) } } catch (_: Exception) {}
+                kotlinx.coroutines.delay(30)
+                if (listState.canScrollForward) {
+                    try { listState.scrollToItem(total - 1) } catch (_: Exception) {}
+                    try { listState.scroll { scrollBy(12000f) } } catch (_: Exception) {}
+                }
+            }
+        }
+    }
+
+    // Detect user drag during generation — simple gate with isAutoScrolling, robust to settling.
+    LaunchedEffect(listState, uiState.isGenerating) {
+        androidx.compose.runtime.snapshotFlow { listState.isScrollInProgress }
+            .collect { scrolling ->
+                if (scrolling && uiState.isGenerating && !isAutoScrolling) {
+                    userScrolledDuringGeneration = true
+                }
+            }
+    }
+
+    // Full auto per-token pin during streaming
+    LaunchedEffect(uiState.partialResponse, uiState.partialReasoning) {
+        if (!uiState.isGenerating) return@LaunchedEffect
+        if (isNearBottom || !userScrolledDuringGeneration) {
+            scrollToBottomInstant()
         }
     }
 
@@ -544,11 +558,13 @@ fun ChatScreen(
                 val displayMessages = if (searchQuery.isBlank()) uiState.messages
                     else uiState.messages.filter { it.message.content.contains(searchQuery, ignoreCase = true) }
 
+                // DEBUG overlay for scroll
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                 ) {
+
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize(),
@@ -557,7 +573,7 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                     if (uiState.messages.isEmpty() && !uiState.isGenerating) {
-                        item {
+                        item(key = "empty") {
                             Box(
                                 modifier = Modifier.fillParentMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -614,13 +630,13 @@ fun ChatScreen(
                             onStopSpeaking = { viewModel.stopSpeaking() },
                             isSpeaking = uiState.speakingMessageId == message.id,
                             onRegenerate = if (message.role == "assistant" && !uiState.isGenerating) {
-                                { viewModel.regenerateFromMessage(message.id) }
+                                { wasNearBottomBeforeSend = isNearBottom; viewModel.regenerateFromMessage(message.id) }
                             } else null,
                         )
                     }
 
                     if (uiState.isGenerating) {
-                        item {
+                        item(key = "streaming") {
                             if (uiState.partialResponse.isNotEmpty() || uiState.partialReasoning.isNotEmpty()) {
                                 StreamingMessage(
                                     partialResponse = uiState.partialResponse,
@@ -634,7 +650,7 @@ fun ChatScreen(
 
                     }
                     // Scroll-to-bottom FAB — shows whenever we're not at the true bottom
-                    val showJump by remember { derivedStateOf { !isAtBottom && (uiState.messages.isNotEmpty() || uiState.isGenerating) } }
+                    val showJump by remember { derivedStateOf { !isNearBottom && (uiState.messages.isNotEmpty() || uiState.isGenerating) } }
                     androidx.compose.animation.AnimatedVisibility(
                         visible = showJump,
                         enter = fadeIn() + scaleIn(),
@@ -643,7 +659,7 @@ fun ChatScreen(
                     ) {
                         androidx.compose.material3.SmallFloatingActionButton(
                             onClick = {
-                                scope.launch { animateToTrueBottom() }
+                                scope.launch { animateToBottom() }
                             },
                             modifier = Modifier
                                 .padding(end = 16.dp, bottom = 16.dp)
@@ -714,6 +730,7 @@ fun ChatScreen(
                             scope.launch { snackbarHostState.showSnackbar("Compacting — please wait before sending") }
                             return@InputBar
                         }
+                        wasNearBottomBeforeSend = isNearBottom
                         viewModel.sendMessageWithImages(inputText, pendingImages)
                         inputText = ""
                         pendingImages = emptyList()
@@ -838,6 +855,7 @@ fun ChatScreen(
                     }
                     TextButton(
                         onClick = {
+                            wasNearBottomBeforeSend = isNearBottom
                             viewModel.regenerateFromMessage(msg.id)
                             actionMessage = null
                         },

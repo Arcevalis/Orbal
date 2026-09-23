@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
- * Collapsible thinking block — mirrors OGAM's ThinkingBlock.
+ * Collapsible thinking block.
  * Shows reasoning (from <think>, <|channel>thought, Qwen analysis, or structured reasoning_content)
  * separated from the visible answer. The setting "Strip Thinking Tags" controls whether this
  * is rendered at all; when disabled, the engine preserves reasoning and this block shows it.
@@ -35,10 +35,10 @@ fun ThinkingBlock(
     modifier: Modifier = Modifier,
 ) {
     if (reasoning.isBlank()) return
-    var expanded by remember { mutableStateOf(false) }
+    // Expanded while streaming so live reasoning is visible, collapsed when done.
+    // remember(isStreaming) resets when streaming phase flips.
+    var expanded by remember(isStreaming) { mutableStateOf(isStreaming) }
 
-    // During streaming, keep expanded so user sees live reasoning? OGAM collapses preview until tap.
-    // We keep collapsed by default for completed, expanded false.
     val headerText = if (isStreaming) "Thinking..." else "Thought process"
     val preview = if (!expanded) {
         reasoning.lineSequence().firstOrNull()?.take(80)?.let {

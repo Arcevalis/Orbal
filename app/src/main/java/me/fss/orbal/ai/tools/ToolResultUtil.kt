@@ -1,6 +1,6 @@
 package me.fss.orbal.ai.tools
 
-const val MAX_TOOL_RESULT_CHARS = 24000 // ~6k tokens, matches OGAM bound
+const val MAX_TOOL_RESULT_CHARS = 24000 // ~6k tokens
 
 fun classifyToolError(err: Throwable): ToolErrorCategory {
     val msg = (err.message ?: err.toString()).lowercase()
@@ -40,7 +40,7 @@ fun normalizeToolResult(call: ToolCall, raw: ToolResult): ToolResult {
 
 fun boundToolResult(name: String, content: String, maxChars: Int = MAX_TOOL_RESULT_CHARS): String {
     if (content.length <= maxChars) return content
-    // Keep HEAD, OGAM keeps overview leading
+    // Keep HEAD, keeps overview leading
     val truncated = content.take(maxChars)
     return truncated + "\n\n[Truncated — result was ${content.length} chars, showing first $maxChars]"
 }

@@ -84,7 +84,7 @@ fun MessageBubble(
                 )
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                // Thinking block — OGAM-style reasoning above answer (only for assistant)
+                // Thinking block — reasoning above answer (only for assistant)
                 if (!isUser && !reasoningContent.isNullOrBlank()) {
                     ThinkingBlock(reasoning = reasoningContent, isStreaming = false)
                     Spacer(modifier = Modifier.height(8.dp))

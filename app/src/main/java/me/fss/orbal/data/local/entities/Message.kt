@@ -25,7 +25,7 @@ data class Message(
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
     val tokenCount: Int = 0,
-    // OGAM-style separate reasoning channel — persists thinking blocks ( <think>, <|channel>thought, Qwen analysis )
+    // Separate reasoning channel — persists thinking blocks ( <think>, <|channel>thought, Qwen analysis )
     // Null when no reasoning or when "Strip Thinking Tags" is enabled.
     val reasoningContent: String? = null,
 )

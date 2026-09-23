@@ -77,7 +77,6 @@ object ToolRegistry {
 
     /**
      * Build OpenAI `tools` array for ChatCompletionRequest.
-     * Mirrors OGAM getToolsAsOpenAISchema.
      */
     fun getToolsAsOpenAISchema(enabledToolIds: List<String>): List<Map<String, Any>> {
         return AVAILABLE_TOOLS.filter { it.id in enabledToolIds }.map { tool ->

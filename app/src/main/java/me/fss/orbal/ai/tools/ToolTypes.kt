@@ -1,6 +1,6 @@
 package me.fss.orbal.ai.tools
 
-/** Status after execution, mirrored from OGAM toolResult */
+/** Status after execution, mirrored from toolResult */
 enum class ToolResultStatus { OK, EMPTY, ERROR }
 
 enum class ToolErrorCategory { TIMEOUT, NETWORK, VALIDATION, NOT_FOUND, INTERNAL }
